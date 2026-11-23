@@ -1,0 +1,83 @@
+flowchart TD
+    %% Biru = pelanggan, oranye = server, hijau = dapur, merah muda = pertanyaan/keputusan
+    %% Garis ungu putus-putus = pesan yang dikirim lewat jaringan
+
+    subgraph CUST["PELANGGAN &nbsp;(order.py)"]
+        C0([Buka aplikasi pemesanan]) --> C1{"Server<br/>menyala?"}
+        C1 -- tidak --> CX([Tampilkan pesan error, keluar])
+        C1 -- ya --> C2["Minta daftar menu ke server"]
+        C2 --> C3["Tampilkan MENU beserta harga"]
+        C3 --> C4["Pelanggan mengetik nomor menu"]
+        C4 --> C5{"Nomor ada<br/>di menu?"}
+        C5 -- tidak --> C6["Tulis 'angka invalid',<br/>hapus tulisan lama"] --> C4
+        C5 -- ya --> C7["Tambahkan ke ORDERAN ANDA"]
+        C7 --> C8{"Mau pesan<br/>lagi?"}
+        C8 -- ya --> C4
+        C8 -- tidak --> C9["Isi nama pemesan,<br/>tampilkan ringkasan + total"]
+        C9 --> C10{"Lanjutkan<br/>transaksi?"}
+        C10 -- tidak --> C11["Transaksi dibatalkan"]
+        C10 -- ya --> C12["Kirim pesanan ke server"]
+        C12 --> C13["Cetak struk:<br/>no. antrian, total, estimasi tunggu"]
+        C13 --> C14["Tampilkan posisi antrian<br/>setiap kali berubah"]
+        C14 --> C15{"Pesanan<br/>sudah siap?"}
+        C15 -- belum --> C14
+        C15 -- sudah --> C16["'Pesanan atas nama ... siap diambil!'"]
+        C11 --> C17{"Ada pelanggan<br/>berikutnya?"}
+        C16 --> C17
+        C17 -- ya --> C3
+        C17 -- tidak --> C18([Selesai])
+    end
+
+    subgraph SRV["SERVER &nbsp;(server.py) — penghubung pelanggan dan dapur"]
+        S0([Nyalakan server]) --> S1{"Mode demo?<br/>(pakai seed)"}
+        S1 -- ya --> S2["Isi antrian dengan<br/>N pelanggan contoh"] --> S3
+        S1 -- tidak --> S3["Tunggu pelanggan / dapur terhubung"]
+        S3 --> S4["Kirim daftar menu"]
+        S3 --> S5["Terima pesanan:<br/>beri no. antrian, hitung total,<br/>taruh di belakang antrian"]
+        S3 --> S6{"Dapur<br/>minta apa?"}
+        S6 -- proses --> S7["Pesanan terdepan yang menunggu<br/>ditandai 'sedang dimasak'"]
+        S6 -- selesai --> S8["Pesanan terdepan keluar antrian,<br/>pemesannya diberi tahu"]
+        S5 --> S9["Kabarkan antrian terbaru ke dapur<br/>dan ke semua pelanggan yang menunggu"]
+        S7 --> S9
+        S8 --> S9
+    end
+
+    subgraph DAP["DAPUR &nbsp;(dapur.py) — hanya satu"]
+        D0([Buka layar dapur]) --> D1["Tampilkan daftar antrian<br/>(diperbarui otomatis)"]
+        D1 --> D2{"Staf dapur<br/>mengetik"}
+        D2 -- "p" --> D3["Mulai masak pesanan berikutnya"] --> D1
+        D2 -- "s" --> D4["Pesanan terdepan selesai"] --> D1
+        D2 -- "k" --> D5([Tutup layar dapur])
+    end
+
+    C2 -. "minta menu" .-> S4
+    S4 -. "daftar menu" .-> C3
+    C12 -. "pesanan" .-> S5
+    S5 -. "no. antrian" .-> C13
+    S9 -. "posisi antrian" .-> C14
+    S8 -. "siap diambil" .-> C15
+    D3 -. "proses" .-> S6
+    D4 -. "selesai" .-> S6
+    S9 -. "daftar antrian" .-> D1
+
+    classDef cust fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    classDef srv fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#7c2d12
+    classDef dap fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+    classDef ask fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    classDef ends fill:#334155,stroke:#0f172a,color:#ffffff
+    classDef good fill:#bbf7d0,stroke:#15803d,stroke-width:3px,color:#14532d
+    classDef bad fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
+
+    class C2,C3,C4,C6,C7,C9,C12,C13,C14 cust
+    class S2,S3,S4,S5,S7,S8,S9 srv
+    class D1,D3,D4 dap
+    class C1,C5,C8,C10,C15,C17,S1,S6,D2 ask
+    class C0,C18,S0,D0,D5 ends
+    class C16 good
+    class CX,C11 bad
+
+    style CUST fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    style SRV fill:#fff7ed,stroke:#ea580c,stroke-width:2px,color:#7c2d12
+    style DAP fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#14532d
+
+    linkStyle 43,44,45,46,47,48,49,50,51 stroke:#7c3aed,stroke-width:2px,color:#5b21b6

@@ -1,0 +1,47 @@
+flowchart LR
+    subgraph PELANGGAN["Sisi Pelanggan (banyak terminal)"]
+        O1["order.py #1<br/>CustomerClient"]
+        O2["order.py #2<br/>CustomerClient"]
+        On["order.py #n ..."]
+    end
+
+    subgraph SERVER["server.py — CanteenServer (127.0.0.1:5050, lokal saja)"]
+        direction TB
+        L["Listener socket<br/>accept()"] --> T["1 thread per koneksi<br/>handle_client()"]
+        T --> R{"role dari 'hello'"}
+        R -- customer --> HC["serve_customer()"]
+        R -- dapur --> HD["serve_dapur()<br/>(dapur kedua ditolak)"]
+        HC --> Q[("orders: list FIFO<br/>Order: no, nama, items,<br/>total, status, conn")]
+        HD --> Q
+        Q --> B["broadcast()<br/>(dijaga threading.Lock)"]
+        Q --> LOG["log() → layar server"]
+    end
+
+    subgraph DAPUR["Sisi Dapur (satu)"]
+        D1["dapur.py<br/>DapurClient"]
+    end
+
+    C["common.py<br/>Connection (JSON per baris)<br/>MENU, MERCHANT, HOST, PORT"]
+
+    O1 <-- "TCP: hello, order ⇄<br/>menu, accepted, status, ready" --> L
+    O2 <--> L
+    On <--> L
+    D1 <-- "TCP: hello, process, done ⇄<br/>welcome, queue, info" --> L
+
+    C -. "diimpor oleh" .- PELANGGAN
+    C -. "diimpor oleh" .- SERVER
+    C -. "diimpor oleh" .- DAPUR
+
+    classDef cust fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    classDef srv fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#7c2d12
+    classDef dap fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d
+    classDef ask fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#831843
+    classDef shared fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#4c1d95
+    class O1,O2,On cust
+    class L,T,HC,HD,Q,B,LOG srv
+    class R ask
+    class D1 dap
+    class C shared
+    style PELANGGAN fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+    style SERVER fill:#fff7ed,stroke:#ea580c,stroke-width:2px,color:#7c2d12
+    style DAPUR fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#14532d

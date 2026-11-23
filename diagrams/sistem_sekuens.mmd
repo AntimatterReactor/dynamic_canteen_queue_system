@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    box rgb(219,234,254) Sisi Pelanggan
+    actor P as Pelanggan
+    participant O as order.py
+    end
+    box rgb(255,237,213) Server
+    participant S as server.py
+    end
+    box rgb(220,252,231) Sisi Dapur
+    participant D as dapur.py
+    actor K as Staf Dapur
+    end
+
+    D->>S: hello {role: dapur}
+    S-->>D: welcome {merchant}
+    S-->>D: queue {orders: [...]}
+
+    O->>S: hello {role: customer}
+    S-->>O: menu {merchant, menu}
+    P->>O: pilih menu, nama, konfirmasi "y"
+    O->>S: order {nama, items}
+    S->>S: add_order(): no. antrian + total
+    S-->>O: accepted {order_no, total, ahead, estimasi}
+    S-->>D: queue {orders}
+    S-->>O: status {ahead, status: menunggu, queue}
+    O-->>P: cetak RECEIPT + "Antrian: ..."
+
+    loop sampai pesanan pelanggan ini siap
+        K->>D: "p"
+        D->>S: process
+        S-->>D: queue + info
+        S-->>O: status {ahead, status}
+        K->>D: "s"
+        D->>S: done (pesanan terdepan)
+        alt pesanan milik pelanggan lain
+            S-->>O: status {ahead berkurang}
+        else pesanan milik pelanggan ini
+            S-->>O: ready {nama}
+            O-->>P: "Pesanan atas nama ... siap diambil!"
+        end
+        S-->>D: queue + info
+    end
